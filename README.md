@@ -1,2 +1,2 @@
 # Misty
-A Lisp interpreter in Python.
+Two implementations of a Scheme interpreter — one in Scheme itself, and the other in Lua.
