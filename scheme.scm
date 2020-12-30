@@ -57,3 +57,32 @@
 		 ((eq? (car e) 'cond) *cond)
 		 (else *application)))
 	  (else *application))))
+
+;;; Actions
+(define *const
+  (lambda (e env)
+    (cond ((number? e) e)
+	  ((eq #t e) e)
+	  ((eq #f e) e)
+	  (else (build 'primitive e)))))
+
+(define *quote
+  (lambda (e env)
+    (cdr e)))
+
+(define *identifier
+  (lambda (e env)
+    (lookup-in-table e env (lambda (name) (car '())))))
+
+(define *lambda
+  (lambda (e env)
+    (build 'non-primitive (cons env (cdr e)))))
+
+;;; Interpreter starts here
+(define meaning
+  (lambda (e env)
+    ((expression-to-action e) e env)))
+
+(define value
+  (lambda (e)
+    (meaning e '())))
