@@ -74,9 +74,33 @@
   (lambda (e env)
     (lookup-in-table e env (lambda (name) (car '())))))
 
+;; lambda helpers
+(define table-of first)
+(define formals-of second)
+(define body-of third)
+
 (define *lambda
   (lambda (e env)
     (build 'non-primitive (cons env (cdr e)))))
+
+;;; cond helpers
+(define else?
+  (lambda (x)
+    (cond ((atom? x) (eq? x 'else))
+	  (else #f))))
+
+(define question-of first)
+(define answer-of second)
+
+(define evcon
+  (lambda (lines table)
+    (cond ((else? (question-of (car lines))) (meaning (answer-of (car lines)) table))
+	  ((meaning (question-of (car lines)) table) (meaning (answer-of (car lines)) table))
+	  (else (evcon (cdr lines) table)))))
+
+(define *cond
+  (lambda (e env)
+    (evcon (cdr e) env)))
 
 ;;; Interpreter starts here
 (define meaning
