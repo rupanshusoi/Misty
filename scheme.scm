@@ -5,7 +5,6 @@
 
 ;;; Dictionary utilities
 (define new-entry build)
-
 (define extend-table cons)
 
 (define lookup-in-entry
@@ -83,7 +82,7 @@
   (lambda (e env)
     (build 'non-primitive (cons env (cdr e)))))
 
-;;; cond helpers
+;; cond helpers
 (define else?
   (lambda (x)
     (cond ((atom? x) (eq? x 'else))
@@ -92,7 +91,7 @@
 (define question-of first)
 (define answer-of second)
 
-(define evcon
+(define evcond
   (lambda (lines table)
     (cond ((else? (question-of (car lines))) (meaning (answer-of (car lines)) table))
 	  ((meaning (question-of (car lines)) table) (meaning (answer-of (car lines)) table))
@@ -100,7 +99,59 @@
 
 (define *cond
   (lambda (e env)
-    (evcon (cdr e) env)))
+    (evcond (cdr e) env)))
+
+;; application helpers
+(define evlist
+  (lambda (args table)
+    (cond ((null? args) '())
+	  (else (cons (meaning (car args) table) (evlist (cdr args) table))))))
+
+(define function-of car)
+(define arguments-of cdr)
+
+(define *application
+  (lambda (e env)
+    (my-apply (meaning (function-of e) env) (evlist (arguments-of e) env))))
+
+;; apply helpers
+(define primitive?
+  (lambda (l)
+    (eq? (car l) 'primitive)))
+
+(define non-primitive?
+  (lambda (l)
+    (eq? (car l) 'non-primitive)))
+
+(define :atom?
+  (lambda (x)
+    (cond ((atom? x) #t)
+	  ((null? x) #f)
+	  ((eq? (car x) 'primitive) #t)
+	  ((eq? (car x) 'non-primitive) #t)
+	  (else #f))))
+
+(define apply-primitive
+  (lambda (fun vals)
+    (cond ((eq? fun 'cons) (cons (car vals) (cdr vals)))
+	  ((eq? fun 'car) (car (car vals)))
+	  ((eq? fun 'cdr) (cdr (car vals)))
+	  ((eq? fun 'null?) (null? (car vals)))
+	  ((eq? fun 'eq?) (eq? (car vals) (cdr vals)))
+	  ((eq? fun 'atom?) (:atom? (car vals)))
+	  ((eq? fun 'zero?) (zero? (car vals)))
+	  ((eq? fun 'add1) (add1 (car vals)))
+	  ((eq? fun 'sub1) (sub1 (car vals)))
+	  ((eq? fun 'number?) (number? (car vals))))))
+
+(define my-apply
+  (lambda (fun vals)
+    (cond ((primitive? fun) (apply-primitive (cdr fun) vals))
+	  ((non-primitive? fun) (apply-closure (cdr fun) vals)))))
+
+(define apply-closure
+  (lambda (closure vals)
+    (meaning (body-of closure) (extend-table (new-entry (formals-of closure) vals) (table-of closure)))))
 
 ;;; Interpreter starts here
 (define meaning
