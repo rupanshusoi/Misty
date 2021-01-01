@@ -46,7 +46,7 @@
       ((eq? e 'zero) *const)
       ((eq? e 'add1) *const)
       ((eq? e 'sub1) *const)
-      (else *identifer))))
+      (else *identifier))))
 
 (define list-to-action
   (lambda (e)
@@ -61,8 +61,8 @@
 (define *const
   (lambda (e env)
     (cond ((number? e) e)
-	  ((eq #t e) e)
-	  ((eq #f e) e)
+	  ((eq? #t e) e)
+	  ((eq? #f e) e)
 	  (else (build 'primitive e)))))
 
 (define *quote
