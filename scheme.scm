@@ -1,3 +1,7 @@
+(define print-debug
+  (lambda (x)
+    (print "Hi, there!")))
+
 ;;; Pair utilities
 (define build
   (lambda (s1 s2)
@@ -103,9 +107,9 @@
 
 ;; application helpers
 (define evlist
-  (lambda (args table)
+  (lambda (args env)
     (cond ((null? args) '())
-	  (else (cons (meaning (car args) table) (evlist (cdr args) table))))))
+	  (else (cons (meaning (car args) env) (evlist (cdr args) env))))))
 
 (define function-of car)
 (define arguments-of cdr)
@@ -133,16 +137,16 @@
 
 (define apply-primitive
   (lambda (fun vals)
-    (cond ((eq? fun 'cons) (cons (car vals) (cdr vals)))
-	  ((eq? fun 'car) (car (car vals)))
-	  ((eq? fun 'cdr) (cdr (car vals)))
-	  ((eq? fun 'null?) (null? (car vals)))
-	  ((eq? fun 'eq?) (eq? (car vals) (cdr vals)))
-	  ((eq? fun 'atom?) (:atom? (car vals)))
-	  ((eq? fun 'zero?) (zero? (car vals)))
-	  ((eq? fun 'add1) (add1 (car vals)))
-	  ((eq? fun 'sub1) (sub1 (car vals)))
-	  ((eq? fun 'number?) (number? (car vals))))))
+    (cond ((eq? (car fun) 'cons) (cons (car vals) (cdr vals)))
+	  ((eq? (car fun) 'car) (car (car vals)))
+	  ((eq? (car fun) 'cdr) (cdr (car vals)))
+	  ((eq? (car fun) 'null?) (null? (car vals)))
+	  ((eq? (car fun) 'eq?) (eq? (car vals) (cdr vals)))
+	  ((eq? (car fun) 'atom?) (:atom? (car vals)))
+	  ((eq? (car fun) 'zero?) (zero? (car vals)))
+	  ((eq? (car fun) 'add1) (add1 (car vals)))
+	  ((eq? (car fun) 'sub1) (sub1 (car vals)))
+	  ((eq? (car fun) 'number?) (number? (car vals))))))
 
 (define my-apply
   (lambda (fun vals)
