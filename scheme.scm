@@ -1,5 +1,6 @@
+;;; Debug utilities
 (define print-debug
-  (lambda (x)
+  (lambda x
     (print "Hi, there!")))
 
 ;;; Pair utilities
