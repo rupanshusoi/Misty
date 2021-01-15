@@ -1,7 +1,7 @@
 -- Add types
-
 local AstPrimitive = { __type = 'AstPrimitive' }
-local AstConst =     { __type = 'AstConst'     }
+local AstConst     = { __type = 'AstConst'     }
+local AstList      = { __type = 'AstList'      }
 
 function AstPrimitive:new(o)
   o = o or { args = {} }
@@ -17,15 +17,26 @@ function AstConst:new(o)
   return o
 end
 
-local function apply_primitive(expr)
-  if expr.func == '+' then
-    return evaluate(expr.args[1]) + evaluate(expr.args[2])
-  elseif expr.func == '-' then
-    return evaluate(expr.args[1]) - evaluate(expr.args[2])
-  elseif expr.func == '*' then
-    return evaluate(expr.args[1]) * evaluate(expr.args[2])
-  elseif expr.func == '//' then
-    return evaluate(expr.args[1]) // evaluate(expr.args[2])
+function AstList:new(o)
+  o = o or { values = {} }
+  setmetatable(o, self)
+  self.__index = self
+  return o
+end
+
+local function apply_primitive(ast)
+  if ast.func == '+' then
+    return evaluate(ast.args[1]) + evaluate(ast.args[2])
+  elseif ast.func == '-' then
+    return evaluate(ast.args[1]) - evaluate(ast.args[2])
+  elseif ast.func == '*' then
+    return evaluate(ast.args[1]) * evaluate(ast.args[2])
+  elseif ast.func == '//' then
+    return evaluate(ast.args[1]) // evaluate(ast.args[2])
+  elseif ast.func == 'car' then
+    return evaluate(ast.args[1].values[1])
+  else
+    assert(false)
   end
 end
 
@@ -34,45 +45,83 @@ local function apply_const(ast)
 end
 
 local function parse(tokens)
-  assert(#tokens > 2, 'S-expression too small')
+  assert(#tokens > 2, 'S-astession too small')
   assert(tokens[1] == '(', 'expected LPAREN but got ' .. tokens[1])
   assert(tokens[#tokens] == ')', 'expected RPAREN but got ' .. tokens[#tokens])
 
-  local expr = AstPrimitive:new()
-  expr.func = tokens[2]
+  -- Check the first token after LPAREN
+  local is_list = tonumber(tokens[2])
 
-  -- Remove all tokens except args
-  local tokens_trimmed = { table.unpack(tokens, 3, #tokens - 1) }
+  if is_list then
+    local ast = AstList:new()
 
-  local i, argc = 1, 1
-  while i <= #tokens_trimmed do
+    -- Remove parens
+    local tokens_trimmed = { table.unpack(tokens, 2, #tokens - 1) }
 
-    if tokens_trimmed[i] == '(' then
-
-      local j, paren = i + 1, 0
-      while j < #tokens_trimmed do
-        if tokens_trimmed[j] == ')' then
-          if paren == 0 then break end
-          paren = paren - 1
-        elseif tokens_trimmed[j] == '(' then
-          paren = paren + 1
+    local i, argc = 1, 1
+    while i <= #tokens_trimmed do
+  
+      if tokens_trimmed[i] == '(' then
+  
+        local j, paren = i + 1, 0
+        while j < #tokens_trimmed do
+          if tokens_trimmed[j] == ')' then
+            if paren == 0 then break end
+            paren = paren - 1
+          elseif tokens_trimmed[j] == '(' then
+            paren = paren + 1
+          end
+          j = j + 1
         end
-        j = j + 1
+  
+        table.insert(ast.values, argc, parse({ table.unpack(tokens_trimmed, i, j) }))
+        i = j + 1
+  
+      else
+        local const = AstConst:new({ value = tonumber(tokens_trimmed[i]) })
+        table.insert(ast.values, argc, const)
+        i = i + 1
       end
-
-      table.insert(expr.args, argc, parse({ table.unpack(tokens_trimmed, i, j) }))
-      i = j + 1
-
-    else
-      local const = AstConst:new({ value = tonumber(tokens_trimmed[i]) })
-      table.insert(expr.args, argc, const)
-      i = i + 1
+  
+      argc = argc + 1
     end
-
-    argc = argc + 1
+    return ast
+  else
+    local ast = AstPrimitive:new()
+    ast.func = tokens[2]
+  
+    -- Remove all tokens except args
+    local tokens_trimmed = { table.unpack(tokens, 3, #tokens - 1) }
+  
+    local i, argc = 1, 1
+    while i <= #tokens_trimmed do
+  
+      if tokens_trimmed[i] == '(' then
+  
+        local j, paren = i + 1, 0
+        while j < #tokens_trimmed do
+          if tokens_trimmed[j] == ')' then
+            if paren == 0 then break end
+            paren = paren - 1
+          elseif tokens_trimmed[j] == '(' then
+            paren = paren + 1
+          end
+          j = j + 1
+        end
+  
+        table.insert(ast.args, argc, parse({ table.unpack(tokens_trimmed, i, j) }))
+        i = j + 1
+  
+      else
+        local const = AstConst:new({ value = tonumber(tokens_trimmed[i]) })
+        table.insert(ast.args, argc, const)
+        i = i + 1
+      end
+  
+      argc = argc + 1
+    end
+    return ast
   end
-
-  return expr
 end
 
 local function tokenize(S)
@@ -85,11 +134,14 @@ local function tokenize(S)
   return tokens
 end
 
+-- Needs to be global
 function evaluate(ast)
   if ast.__type == 'AstPrimitive' then
     return apply_primitive(ast)
   elseif ast.__type == 'AstConst' then
     return apply_const(ast)
+  elseif ast.__type == 'AstList' then
+    return ast
   else
     assert(false)
   end
@@ -99,4 +151,5 @@ local function interpret(S)
   return evaluate(parse(tokenize(S)))
 end
 
-print(interpret('(* (+ (// (- 16 2) 2) 3) 3)'))
+--print(interpret('(* (+ (// (- 16 2) 2) 3) 3)'))
+print(interpret('(car (1 2 3))'))
