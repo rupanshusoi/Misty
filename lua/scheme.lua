@@ -1,19 +1,36 @@
-local function eval_arithmetic(expr)
-  if type(expr) == 'table' then
-    if expr.func == '+' then
-      return eval_arithmetic(expr.arg1) + eval_arithmetic(expr.arg2)
-    elseif expr.func == '-' then
-      return eval_arithmetic(expr.arg1) - eval_arithmetic(expr.arg2)
-    elseif expr.func == '*' then
-      return eval_arithmetic(expr.arg1) * eval_arithmetic(expr.arg2)
-    elseif expr.func == '//' then
-      return eval_arithmetic(expr.arg1) // eval_arithmetic(expr.arg2)
-    end
-  elseif type(expr) == 'number' then
-    return expr
-  else
-    assert(false)
+-- Add types
+
+local AstPrimitive = { __type = 'AstPrimitive' }
+local AstConst =     { __type = 'AstConst'     }
+
+function AstPrimitive:new(o)
+  o = o or { args = {} }
+  setmetatable(o, self)
+  self.__index = self
+  return o
+end
+
+function AstConst:new(o)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  return o
+end
+
+local function apply_primitive(expr)
+  if expr.func == '+' then
+    return evaluate(expr.args[1]) + evaluate(expr.args[2])
+  elseif expr.func == '-' then
+    return evaluate(expr.args[1]) - evaluate(expr.args[2])
+  elseif expr.func == '*' then
+    return evaluate(expr.args[1]) * evaluate(expr.args[2])
+  elseif expr.func == '//' then
+    return evaluate(expr.args[1]) // evaluate(expr.args[2])
   end
+end
+
+local function apply_const(ast)
+  return ast.value
 end
 
 local function parse(tokens)
@@ -21,7 +38,7 @@ local function parse(tokens)
   assert(tokens[1] == '(', 'expected LPAREN but got ' .. tokens[1])
   assert(tokens[#tokens] == ')', 'expected RPAREN but got ' .. tokens[#tokens])
 
-  local expr = {}
+  local expr = AstPrimitive:new()
   expr.func = tokens[2]
 
   -- Remove all tokens except args
@@ -43,11 +60,12 @@ local function parse(tokens)
         j = j + 1
       end
 
-      expr['arg' .. tostring(argc)] = parse({ table.unpack(tokens_trimmed, i, j) })
+      table.insert(expr.args, argc, parse({ table.unpack(tokens_trimmed, i, j) }))
       i = j + 1
 
     else
-      expr['arg' .. tostring(argc)] = tonumber(tokens_trimmed[i])
+      local const = AstConst:new({ value = tonumber(tokens_trimmed[i]) })
+      table.insert(expr.args, argc, const)
       i = i + 1
     end
 
@@ -58,7 +76,7 @@ local function parse(tokens)
 end
 
 local function tokenize(S)
-  S, _ = S:gsub('%(', ' ( ')
+  local S, _ = S:gsub('%(', ' ( ')
   S, _ = S:gsub('%)', ' ) ')
   local tokens = {}
   for i in S:gmatch('%S+') do
@@ -67,13 +85,18 @@ local function tokenize(S)
   return tokens
 end
 
-local function meaning(S, env)
-  local ast = parse(tokenize(S))
-  return eval_arithmetic(ast)
+function evaluate(ast)
+  if ast.__type == 'AstPrimitive' then
+    return apply_primitive(ast)
+  elseif ast.__type == 'AstConst' then
+    return apply_const(ast)
+  else
+    assert(false)
+  end
 end
 
-local function evaluate(S)
-  return meaning(S, {})
+local function interpret(S)
+  return evaluate(parse(tokenize(S)))
 end
 
-print(evaluate('(* (+ (// (- 16 2) 2) 3) 3)'))
+print(interpret('(* (+ (// (- 16 2) 2) 3) 3)'))
