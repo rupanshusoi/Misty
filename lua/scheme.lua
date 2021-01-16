@@ -170,4 +170,7 @@ local function my_printn(ast)
   io.write('\n')
 end
 
-my_printn(interpret('(cdr (car (quote ((apples (pears bears)) bananas cakes))))'))
+-- We export this
+function interpret_and_printn(program)
+  my_printn(interpret(program))
+end
