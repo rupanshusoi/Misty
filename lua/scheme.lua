@@ -1,17 +1,9 @@
 -- Add types
 local AstPrimitive = { __type = 'AstPrimitive' }
-local AstConst     = { __type = 'AstConst'     }
 local AstList      = { __type = 'AstList'      }
 
 function AstPrimitive:new(o)
   o = o or { args = {} }
-  setmetatable(o, self)
-  self.__index = self
-  return o
-end
-
-function AstConst:new(o)
-  o = o or {}
   setmetatable(o, self)
   self.__index = self
   return o
@@ -78,8 +70,7 @@ local function parse(tokens)
         i = j + 1
   
       else
-        local const = AstConst:new({ value = tonumber(tokens_trimmed[i]) })
-        table.insert(ast.values, const)
+        table.insert(ast.values, tonumber(tokens_trimmed[i]))
         i = i + 1
       end
     end
@@ -111,8 +102,7 @@ local function parse(tokens)
         i = j + 1
   
       else
-        local const = AstConst:new({ value = tonumber(tokens_trimmed[i]) })
-        table.insert(ast.args, const)
+        table.insert(ast.args, tonumber(tokens_trimmed[i]))
         i = i + 1
       end
     end
@@ -132,10 +122,10 @@ end
 
 -- Needs to be global
 function evaluate(ast)
-  if ast.__type == 'AstPrimitive' then
+  if type(ast) == 'number' then
+    return ast
+  elseif ast.__type == 'AstPrimitive' then
     return apply_primitive(ast)
-  elseif ast.__type == 'AstConst' then
-    return apply_const(ast)
   elseif ast.__type == 'AstList' then
     return ast
   else
@@ -148,8 +138,8 @@ local function interpret(S)
 end
 
 function my_print(ast)
-  if ast.__type == 'AstConst' then
-    io.write(tostring(ast.value) .. ' ')
+  if type(ast) == 'number' then
+    io.write(tostring(ast) .. ' ')
   elseif ast.__type == 'AstList' then
     io.write('( ')
     for _, value in pairs(ast.values) do
@@ -161,6 +151,7 @@ function my_print(ast)
   end
 end
 
-my_print(interpret('(* (+ (// (- 16 2) 2) 3) 3)'))
+my_print(interpret('(1 2 3)'))
+--my_print(interpret('(* (+ (// (- 16 2) 2) 3) 3)'))
 --my_print(interpret('(car (1 2 3))'))
 --my_print(interpret('(car (1 (+ 2 3)))'))
