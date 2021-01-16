@@ -35,6 +35,10 @@ local function apply_primitive(ast)
     return evaluate(ast.args[1]) // evaluate(ast.args[2])
   elseif ast.func == 'car' then
     return evaluate(ast.args[1]).values[1]
+  elseif ast.func == 'cdr' then
+    local e = evaluate(ast.args[1])
+    table.remove(e.values, 1)
+    return e
   else
     assert(false, 'unknown primitive function: ' .. tostring(ast.func))
   end
@@ -145,7 +149,7 @@ local function interpret(S)
   return evaluate(parse(tokenize(S)))
 end
 
-function my_print(ast)
+local function my_print(ast)
   if type(ast) == 'number' then
     io.write(tostring(ast) .. ' ')
   elseif ast.__type == 'AstList' then
@@ -161,9 +165,9 @@ function my_print(ast)
   end
 end
 
---my_print(interpret('(quote (quote (1 2 3)))'))
---my_print(interpret('(* (+ (// (- 16 2) 2) 3) 3)'))
---my_print(interpret('(+ 2 (+ (* 2 3) 5))'))
---my_print(interpret('(car (1 2 3))'))
---my_print(interpret('(car (1 (+ 2 3)))'))
-my_print(interpret('(car (quote ((quote tears bears cries) bears pears)))'))
+local function my_printn(ast)
+  my_print(ast)
+  io.write('\n')
+end
+
+my_printn(interpret('(cdr (car (quote ((apples (pears bears)) bananas cakes))))'))
