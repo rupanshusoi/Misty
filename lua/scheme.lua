@@ -31,36 +31,49 @@ end
 local function apply_primitive(ast)
   if ast.func == '+' then
     return evaluate(ast.args[1]) + evaluate(ast.args[2])
+
   elseif ast.func == '-' then
     return evaluate(ast.args[1]) - evaluate(ast.args[2])
+
   elseif ast.func == '*' then
     return evaluate(ast.args[1]) * evaluate(ast.args[2])
+
   elseif ast.func == '//' then
     return evaluate(ast.args[1]) // evaluate(ast.args[2])
+
   elseif ast.func == 'car' then
     return evaluate(ast.args[1]).values[1]
+
   elseif ast.func == 'cdr' then
     local e = evaluate(ast.args[1])
     table.remove(e.values, 1)
     return e
+
   elseif ast.func == 'cons' then
     local e = evaluate(ast.args[2]) 
     assert(e.__type == 'AstList', 'second arg to cons must be AstList, instead got: ' .. e.__type)
     table.insert(e.values, 1, evaluate(ast.args[1]))
     return e
+
   elseif ast.func == 'add1' then
     return evaluate(ast.args[1]) + 1
+
   elseif ast.func == 'sub1' then
     return evaluate(ast.args[1]) - 1
+
   elseif ast.func == 'number?' then
     return AstAtom:new({ value = bool2hash(type(evaluate(ast.args[1])) == 'number') })
+
   elseif ast.func == 'atom?' then
     local e = evaluate(ast.args[1])
     return AstAtom:new({ value = bool2hash((type(e) == 'number') or (e.__type == 'AstAtom')) })
+
   elseif ast.func == 'zero?' then
     return AstAtom:new({ value = bool2hash(evaluate(ast.args[1]) == 0) })
+
   else
     assert(false, 'unknown primitive function: ' .. tostring(ast.func))
+
   end
 end
 
@@ -70,11 +83,14 @@ local function find_closep(tokens, openp)
     if tokens[idx] == ')' then
       if paren == 0 then break end
       paren = paren - 1
+
     elseif tokens[idx] == '(' then
       paren = paren + 1
+
     end
     idx = idx + 1
   end
+
   return idx
 end
 
@@ -94,7 +110,6 @@ local function parse(tokens, is_quoted)
     while i <= #tokens_trimmed do
   
       if tokens_trimmed[i] == '(' then
-  
         local closep = find_closep(tokens_trimmed, i)
         table.insert(ast.values, parse({ table.unpack(tokens_trimmed, i, closep) }, is_quoted))
         i = closep + 1
@@ -102,6 +117,7 @@ local function parse(tokens, is_quoted)
       else
         table.insert(ast.values, AstAtom:new({ value = tokens_trimmed[i] }))
         i = i + 1
+
       end
     end
     return ast
@@ -112,6 +128,7 @@ local function parse(tokens, is_quoted)
     if tokens[2] == 'quote' then
       -- Parse as a list
       return parse(tokens_trimmed, true) 
+
     else
       -- Parse as a (primitive) function application
       local ast = AstPrimitive:new()
@@ -121,7 +138,6 @@ local function parse(tokens, is_quoted)
       while i <= #tokens_trimmed do
     
         if tokens_trimmed[i] == '(' then
-    
           local closep = find_closep(tokens_trimmed, i)
           table.insert(ast.args, parse({ table.unpack(tokens_trimmed, i, closep) }))
           i = closep + 1
@@ -129,10 +145,12 @@ local function parse(tokens, is_quoted)
         elseif tonumber(tokens_trimmed[i]) then
           table.insert(ast.args, tonumber(tokens_trimmed[i]))
           i = i + 1
+
         else
           -- Must be an atom
           table.insert(ast.args, AstAtom:new({ value = tokens_trimmed[i] }))
           i = i + 1
+
         end
       end
       return ast
@@ -143,10 +161,12 @@ end
 local function tokenize(S)
   local S, _ = S:gsub('%(', ' ( ')
   S, _ = S:gsub('%)', ' ) ')
+
   local tokens = {}
   for i in S:gmatch('%S+') do
     table.insert(tokens, i)
   end
+
   return tokens
 end
 
@@ -154,14 +174,19 @@ end
 function evaluate(ast)
   if type(ast) == 'number' then
     return ast
+
   elseif ast.__type == 'AstPrimitive' then
     return apply_primitive(ast)
+
   elseif ast.__type == 'AstList' then
     return ast
+
   elseif ast.__type == 'AstAtom' then
     return ast.value
+
   else
     assert(false)
+
   end
 end
 
@@ -172,17 +197,20 @@ end
 local function my_print(ast)
   if type(ast) == 'number' then
     io.write(tostring(ast) .. ' ')
+
   elseif ast.__type == 'AstList' then
     io.write('( ')
     for _, value in pairs(ast.values) do
       my_print(value)
     end
     io.write(') ')
+
   elseif ast.__type == 'AstAtom' then
     io.write(ast.value .. ' ')
+
   else
-    print(ast.func)
     assert(false)
+
   end
 end
 
