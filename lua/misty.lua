@@ -20,7 +20,7 @@ function misty.apply_primitive(ast)
   elseif ast.func.value == '//' then
     return misty.evaluate(ast.args[1]) // misty.evaluate(ast.args[2])
 
-  elseif ast.func.value.value == 'car' then
+  elseif ast.func.value == 'car' then
     return misty.evaluate(ast.args[1]).values[1]
 
   elseif ast.func.value == 'cdr' then
@@ -48,12 +48,22 @@ function misty.apply_primitive(ast)
     return types.AstAtom:new({ value = misty.bool2hash((type(e) == 'number') or (e.__type == 'AstAtom')) })
 
   elseif ast.func.value == 'zero?' then
-    return types.AstAtom:new({ value = bool2hash(misty.evaluate(ast.args[1]) == 0) })
+    return types.AstAtom:new({ value = misty.bool2hash(misty.evaluate(ast.args[1]) == 0) })
 
   else
     assert(false, 'unknown primitive function: ' .. tostring(ast.func.value))
 
   end
+end
+
+function misty.apply_cond(ast)
+  for line = 1, #ast.cond_lines do
+    if misty.evaluate(ast.cond_lines[line].cond).value == '#t' then
+      return misty.evaluate(ast.cond_lines[line].stat)
+    end
+    line = line + 1
+  end
+  assert(false, 'no true cond-line in cond expression')
 end
 
 function misty.evaluate(ast)
@@ -68,6 +78,9 @@ function misty.evaluate(ast)
 
   elseif ast.__type == 'AstAtom' then
     return ast.value
+
+  elseif ast.__type == 'AstCond' then
+    return misty.apply_cond(ast)
 
   else
     assert(false)

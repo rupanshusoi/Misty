@@ -54,13 +54,24 @@ function parser.parse_list(tokens)
   return ast
 end
 
-function parser.parse_cond(tokens)
-  local tokens_trimmed = { table.unpack(tokens, 3, #tokens - 1) }
+function parser.parse_cond_line(list)
+  local ast = types.AstCondLine:new()
 
-  local i = 1
-  while i < #tokens_trimmed do
-    
+  assert(#list.values == 2, 'ill-formed cond expression')
+  ast.cond = parser.main(list.values[1])
+  ast.stat = parser.main(list.values[2])
+
+  return ast
+end
+
+function parser.parse_cond(list)
+  local ast = types.AstCond:new()
+
+  for i = 2, #list.values do
+    table.insert(ast.cond_lines, parser.parse_cond_line(list.values[i])) 
   end
+
+  return ast
 end
 
 function parser.parse_primitive(list)
@@ -83,6 +94,8 @@ function parser.main(list)
   if list.values[1].value == 'quote' then
     assert(#list.values == 2, 'can not quote more than one argument')
     return list.values[2]
+  elseif list.values[1].value == 'cond' then
+    return parser.parse_cond(list)
   else
     return parser.parse_primitive(list)
   end
