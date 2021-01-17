@@ -24,6 +24,10 @@ function AstAtom:new(o)
   return o
 end
 
+local function bool2hash(bool)
+  if bool then return '#t' else return '#f' end
+end
+
 local function apply_primitive(ast)
   if ast.func == '+' then
     return evaluate(ast.args[1]) + evaluate(ast.args[2])
@@ -39,6 +43,22 @@ local function apply_primitive(ast)
     local e = evaluate(ast.args[1])
     table.remove(e.values, 1)
     return e
+  elseif ast.func == 'cons' then
+    local e = evaluate(ast.args[2]) 
+    assert(e.__type == 'AstList', 'second arg to cons must be AstList, instead got: ' .. e.__type)
+    table.insert(e.values, 1, evaluate(ast.args[1]))
+    return e
+  elseif ast.func == 'add1' then
+    return evaluate(ast.args[1]) + 1
+  elseif ast.func == 'sub1' then
+    return evaluate(ast.args[1]) - 1
+  elseif ast.func == 'number?' then
+    return AstAtom:new({ value = bool2hash(type(evaluate(ast.args[1])) == 'number') })
+  elseif ast.func == 'atom?' then
+    local e = evaluate(ast.args[1])
+    return AstAtom:new({ value = bool2hash((type(e) == 'number') or (e.__type == 'AstAtom')) })
+  elseif ast.func == 'zero?' then
+    return AstAtom:new({ value = bool2hash(evaluate(ast.args[1]) == 0) })
   else
     assert(false, 'unknown primitive function: ' .. tostring(ast.func))
   end
@@ -161,6 +181,7 @@ local function my_print(ast)
   elseif ast.__type == 'AstAtom' then
     io.write(ast.value .. ' ')
   else
+    print(ast.func)
     assert(false)
   end
 end
