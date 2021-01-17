@@ -58,7 +58,8 @@ end
 
 function misty.apply_cond(ast)
   for line = 1, #ast.cond_lines do
-    if misty.evaluate(ast.cond_lines[line].cond).value == '#t' then
+    local cond = misty.evaluate(ast.cond_lines[line].cond)
+    if cond == '#t' or cond.value == '#t' then
       return misty.evaluate(ast.cond_lines[line].stat)
     end
     line = line + 1

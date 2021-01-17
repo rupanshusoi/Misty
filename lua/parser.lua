@@ -57,7 +57,7 @@ end
 function parser.parse_cond_line(list)
   local ast = types.AstCondLine:new()
 
-  assert(#list.values == 2, 'ill-formed cond expression')
+  assert(#list.values == 2, 'ill-formed cond-line')
   ast.cond = parser.main(list.values[1])
   ast.stat = parser.main(list.values[2])
 
@@ -88,6 +88,10 @@ end
 function parser.main(list)
   if list.__type == 'AstAtom' then
     if tonumber(list.value) then return tonumber(list.value)
+    elseif (list.value == 'else') or (list.value == '#t') then
+      return types.AstAtom:new({ value = '#t' })
+    elseif (list.value == '#f') then
+      return list
     else assert(false) end
   end
 
