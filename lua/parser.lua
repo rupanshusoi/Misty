@@ -19,7 +19,7 @@ function parser.find_closep(tokens, openp)
   return idx
 end
 
-
+--[[
 function parser.parse_primitive(tokens)
   local ast = types.AstPrimitive:new()
   ast.func = tokens[2]
@@ -47,11 +47,12 @@ function parser.parse_primitive(tokens)
   end
   return ast
 end
+--]]
 
 function parser.parse_list(tokens)
   local ast = types.AstList:new()
 
-  -- Remove parens
+  -- Remove outermost parens
   local tokens_trimmed = { table.unpack(tokens, 2, #tokens - 1) }
 
   local i = 1
@@ -59,7 +60,7 @@ function parser.parse_list(tokens)
 
     if tokens_trimmed[i] == '(' then
       local closep = parser.find_closep(tokens_trimmed, i)
-      table.insert(ast.values, parser.parse({ table.unpack(tokens_trimmed, i, closep) }, true))
+      table.insert(ast.values, parser.parse_list({ table.unpack(tokens_trimmed, i, closep) }))
       i = closep + 1
 
     else
@@ -69,6 +70,15 @@ function parser.parse_list(tokens)
     end
   end
   return ast
+end
+
+function parser.parse_cond(tokens)
+  local tokens_trimmed = { table.unpack(tokens, 3, #tokens - 1) }
+
+  local i = 1
+  while i < #tokens_trimmed do
+    
+  end
 end
 
 function parser.tokenize(S)
@@ -83,6 +93,7 @@ function parser.tokenize(S)
   return tokens
 end
 
+--[[
 function parser.parse(tokens, is_quoted)
   assert(#tokens > 2, 'S-expression too small')
   assert(tokens[1] == '(', 'expected LPAREN but got: ' .. tokens[1])
@@ -95,11 +106,46 @@ function parser.parse(tokens, is_quoted)
     if tokens[2] == 'quote' then
       return parser.parse_list({ table.unpack(tokens, 3, #tokens - 1) }) 
 
+    elseif tokens[2] == 'cond' then
+      return parser.parse_cond(tokens)
+
     else
       return parser.parse_primitive(tokens)
 
     end
   end
+end
+--]]
+
+function parser.parse_primitive(list)
+  local ast = types.AstPrimitive:new()
+  ast.func = list.values[1]
+
+  for arg = 2, #list.values do
+    ast.args[arg - 1] = parser.main(list.values[arg])
+  end
+
+  return ast
+end
+
+function parser.main(list)
+  if list.__type == 'AstAtom' then
+    if tonumber(list.value) then return tonumber(list.value)
+    else assert(false) end
+  end
+
+  if list.values[1].value == 'quote' then
+    assert(#list.values == 2, 'can not quote more than one argument')
+    return list.values[2]
+  else
+    return parser.parse_primitive(list)
+  end
+  assert(false)
+end
+
+function parser.parse(tokens)
+  -- Assume outermost level is a list
+  return parser.main(parser.parse_list(tokens))
 end
 
 return parser

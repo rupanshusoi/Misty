@@ -8,50 +8,50 @@ function misty.bool2hash(bool)
 end
 
 function misty.apply_primitive(ast)
-  if ast.func == '+' then
+  if ast.func.value == '+' then
     return misty.evaluate(ast.args[1]) + misty.evaluate(ast.args[2])
 
-  elseif ast.func == '-' then
+  elseif ast.func.value == '-' then
     return misty.evaluate(ast.args[1]) - misty.evaluate(ast.args[2])
 
-  elseif ast.func == '*' then
+  elseif ast.func.value == '*' then
     return misty.evaluate(ast.args[1]) * misty.evaluate(ast.args[2])
 
-  elseif ast.func == '//' then
+  elseif ast.func.value == '//' then
     return misty.evaluate(ast.args[1]) // misty.evaluate(ast.args[2])
 
-  elseif ast.func == 'car' then
+  elseif ast.func.value.value == 'car' then
     return misty.evaluate(ast.args[1]).values[1]
 
-  elseif ast.func == 'cdr' then
+  elseif ast.func.value == 'cdr' then
     local e = misty.evaluate(ast.args[1])
     table.remove(e.values, 1)
     return e
 
-  elseif ast.func == 'cons' then
+  elseif ast.func.value == 'cons' then
     local e = misty.evaluate(ast.args[2]) 
     assert(type(e) == 'table' and e.__type == 'AstList', 'second arg to cons must be AstList')
     table.insert(e.values, 1, misty.evaluate(ast.args[1]))
     return e
 
-  elseif ast.func == 'add1' then
+  elseif ast.func.value == 'add1' then
     return misty.evaluate(ast.args[1]) + 1
 
-  elseif ast.func == 'sub1' then
+  elseif ast.func.value == 'sub1' then
     return misty.evaluate(ast.args[1]) - 1
 
-  elseif ast.func == 'number?' then
+  elseif ast.func.value == 'number?' then
     return types.AstAtom:new({ value = misty.bool2hash(type(misty.evaluate(ast.args[1])) == 'number') })
 
-  elseif ast.func == 'atom?' then
+  elseif ast.func.value == 'atom?' then
     local e = misty.evaluate(ast.args[1])
     return types.AstAtom:new({ value = misty.bool2hash((type(e) == 'number') or (e.__type == 'AstAtom')) })
 
-  elseif ast.func == 'zero?' then
+  elseif ast.func.value == 'zero?' then
     return types.AstAtom:new({ value = bool2hash(misty.evaluate(ast.args[1]) == 0) })
 
   else
-    assert(false, 'unknown primitive function: ' .. tostring(ast.func))
+    assert(false, 'unknown primitive function: ' .. tostring(ast.func.value))
 
   end
 end
