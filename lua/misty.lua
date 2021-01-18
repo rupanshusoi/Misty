@@ -41,14 +41,14 @@ function misty.apply_primitive(ast)
     return misty.evaluate(ast.args[1]) - 1
 
   elseif ast.func.value == 'number?' then
-    return types.AstAtom:new({ value = misty.bool2hash(type(misty.evaluate(ast.args[1])) == 'number') })
+    return types.AstAtom:new{ value = misty.bool2hash(type(misty.evaluate(ast.args[1])) == 'number') }
 
   elseif ast.func.value == 'atom?' then
     local e = misty.evaluate(ast.args[1])
-    return types.AstAtom:new({ value = misty.bool2hash((type(e) == 'number') or (e.__type == 'AstAtom')) })
+    return types.AstAtom:new{ value = misty.bool2hash((type(e) == 'number') or (e.__type == 'AstAtom')) }
 
   elseif ast.func.value == 'zero?' then
-    return types.AstAtom:new({ value = misty.bool2hash(misty.evaluate(ast.args[1]) == 0) })
+    return types.AstAtom:new{ value = misty.bool2hash(misty.evaluate(ast.args[1]) == 0) }
 
   elseif ast.func.value == 'quote' then
     return ast.args[1]

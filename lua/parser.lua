@@ -73,11 +73,11 @@ function parser.parse_list(tokens)
 
     if tokens_trimmed[i] == '(' then
       local closep = parser.find_closep(tokens_trimmed, i)
-      table.insert(ast.values, parser.parse_list({ table.unpack(tokens_trimmed, i, closep) }))
+      table.insert(ast.values, parser.parse_list{ table.unpack(tokens_trimmed, i, closep) } )
       i = closep + 1
 
     else
-      table.insert(ast.values, types.AstAtom:new({ value = tokens_trimmed[i] }))
+      table.insert(ast.values, types.AstAtom:new{ value = tokens_trimmed[i] } )
       i = i + 1
 
     end
@@ -120,7 +120,7 @@ function parser.main(list)
   if list.__type == 'AstAtom' then
     if tonumber(list.value) then return tonumber(list.value)
     elseif (list.value == 'else') or (list.value == '#t') then
-      return types.AstAtom:new({ value = '#t' })
+      return types.AstAtom:new{ value = '#t' }
     elseif (list.value == '#f') then
       return list
     else assert(false) end
@@ -128,10 +128,10 @@ function parser.main(list)
 
   if list.values[1].value == 'quote' then
     assert(#list.values == 2, 'can not quote more than one argument')
-    return types.AstPrimitive:new({
-      func = types.AstAtom:new({ value = 'quote' }),
+    return types.AstPrimitive:new{
+      func = types.AstAtom:new{ value = 'quote' },
       args = { list.values[2] },
-    })
+    }
   elseif list.values[1].value == 'cond' then
     return parser.parse_cond(list)
   else
