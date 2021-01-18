@@ -5,6 +5,7 @@ local parser = {}
 function parser.tokenize(S)
   local S, _ = S:gsub('%(', ' ( ')
   S, _ = S:gsub('%)', ' ) ')
+  S, _ = S:gsub("'", " ' ")
 
   local tokens = {}
   for i in S:gmatch('%S+') do
@@ -31,13 +32,43 @@ function parser.find_closep(tokens, openp)
   return idx
 end
 
+function parser.expand_quote(tokens)
+  -- Expand 'l --> (quote l)
+  local i = 1
+  while i < #tokens do
+    if tokens[i] == "'" then
+      if tokens[i + 1] == '(' then
+        -- List
+        tokens[i] = 'quote'
+        table.insert(tokens, i, '(')
+
+        local closep = parser.find_closep(tokens, i + 2)
+        table.insert(tokens, closep + 1, ')')
+
+        i = closep + 2
+      else
+        -- Atom
+        tokens[i] = 'quote'
+        table.insert(tokens, i, '(')
+        table.insert(tokens, i + 3, ')')
+
+        i = i + 4
+      end
+    else
+      i = i + 1
+    end
+  end
+
+  return tokens
+end
+
 function parser.parse_list(tokens)
   local ast = types.AstList:new()
 
   -- Remove outermost parens
   local tokens_trimmed = { table.unpack(tokens, 2, #tokens - 1) }
 
-  local i = 1
+  i = 1
   while i <= #tokens_trimmed do
 
     if tokens_trimmed[i] == '(' then
@@ -78,8 +109,8 @@ function parser.parse_primitive(list)
   local ast = types.AstPrimitive:new()
   ast.func = list.values[1]
 
-  for arg = 2, #list.values do
-    ast.args[arg - 1] = parser.main(list.values[arg])
+  for i = 2, #list.values do
+    table.insert(ast.args, parser.main(list.values[i]))
   end
 
   return ast
@@ -97,7 +128,10 @@ function parser.main(list)
 
   if list.values[1].value == 'quote' then
     assert(#list.values == 2, 'can not quote more than one argument')
-    return list.values[2]
+    return types.AstPrimitive:new({
+      func = types.AstAtom:new({ value = 'quote' }),
+      args = list.values[2],
+    })
   elseif list.values[1].value == 'cond' then
     return parser.parse_cond(list)
   else
@@ -108,7 +142,7 @@ end
 
 function parser.parse(tokens)
   -- Assume outermost level is a list
-  return parser.main(parser.parse_list(tokens))
+  return parser.main(parser.parse_list(parser.expand_quote(tokens)))
 end
 
 return parser

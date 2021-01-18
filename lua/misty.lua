@@ -50,6 +50,9 @@ function misty.apply_primitive(ast)
   elseif ast.func.value == 'zero?' then
     return types.AstAtom:new({ value = misty.bool2hash(misty.evaluate(ast.args[1]) == 0) })
 
+  elseif ast.func.value == 'quote' then
+    return ast.args
+
   else
     assert(false, 'unknown primitive function: ' .. tostring(ast.func.value))
 
