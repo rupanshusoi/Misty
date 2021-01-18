@@ -119,11 +119,15 @@ end
 function parser.main(list)
   if list.__type == 'AstAtom' then
     if tonumber(list.value) then return tonumber(list.value)
+
     elseif (list.value == 'else') or (list.value == '#t') then
       return types.AstAtom:new{ value = '#t' }
+
     elseif (list.value == '#f') then
       return list
+
     else assert(false) end
+
   end
 
   if list.values[1].value == 'quote' then
@@ -132,10 +136,13 @@ function parser.main(list)
       func = types.AstAtom:new{ value = 'quote' },
       args = { list.values[2] },
     }
+
   elseif list.values[1].value == 'cond' then
     return parser.parse_cond(list)
+
   else
     return parser.parse_primitive(list)
+
   end
   assert(false)
 end

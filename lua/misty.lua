@@ -62,10 +62,11 @@ end
 function misty.apply_cond(ast)
   for line = 1, #ast.cond_lines do
     local cond = misty.evaluate(ast.cond_lines[line].cond)
+
     if cond == '#t' or cond.value == '#t' then
       return misty.evaluate(ast.cond_lines[line].stat)
     end
-    line = line + 1
+
   end
   assert(false, 'no true cond-line in cond expression')
 end
