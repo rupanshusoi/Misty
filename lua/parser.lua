@@ -130,7 +130,7 @@ function parser.main(list)
     assert(#list.values == 2, 'can not quote more than one argument')
     return types.AstPrimitive:new({
       func = types.AstAtom:new({ value = 'quote' }),
-      args = list.values[2],
+      args = { list.values[2] },
     })
   elseif list.values[1].value == 'cond' then
     return parser.parse_cond(list)
