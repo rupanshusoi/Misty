@@ -8,55 +8,56 @@ function misty.bool2hash(bool)
 end
 
 function misty.apply_primitive(ast)
-  if ast.func.value == '+' then
-    return misty.evaluate(ast.args[1]) + misty.evaluate(ast.args[2])
 
-  elseif ast.func.value == '-' then
-    return misty.evaluate(ast.args[1]) - misty.evaluate(ast.args[2])
+  local lookup = {
 
-  elseif ast.func.value == '*' then
-    return misty.evaluate(ast.args[1]) * misty.evaluate(ast.args[2])
+    ['+'] = function() return misty.evaluate(ast.args[1]) + misty.evaluate(ast.args[2]) end,
 
-  elseif ast.func.value == '//' then
-    return misty.evaluate(ast.args[1]) // misty.evaluate(ast.args[2])
+    ['-'] = function() return misty.evaluate(ast.args[1]) - misty.evaluate(ast.args[2]) end,
 
-  elseif ast.func.value == 'car' then
-    return misty.evaluate(ast.args[1]).values[1]
+    ['*'] = function() return misty.evaluate(ast.args[1]) * misty.evaluate(ast.args[2]) end,
 
-  elseif ast.func.value == 'cdr' then
-    local e = misty.evaluate(ast.args[1])
-    table.remove(e.values, 1)
-    return e
+    ['//'] = function() return misty.evaluate(ast.args[1]) // misty.evaluate(ast.args[2]) end,
 
-  elseif ast.func.value == 'cons' then
-    local e = misty.evaluate(ast.args[2]) 
-    assert(type(e) == 'table' and e.__type == 'AstList', 'second arg to cons must be AstList')
-    table.insert(e.values, 1, misty.evaluate(ast.args[1]))
-    return e
+    ['car'] = function() return misty.evaluate(ast.args[1]).values[1] end,
 
-  elseif ast.func.value == 'add1' then
-    return misty.evaluate(ast.args[1]) + 1
+    ['cdr'] = function()
+      local e = misty.evaluate(ast.args[1])
+      table.remove(e.values, 1)
+      return e
+    end,
 
-  elseif ast.func.value == 'sub1' then
-    return misty.evaluate(ast.args[1]) - 1
+    ['cons'] = function()
+      local e = misty.evaluate(ast.args[2]) 
+      assert(type(e) == 'table' and e.__type == 'AstList', 'second arg to cons must be AstList')
+      table.insert(e.values, 1, misty.evaluate(ast.args[1]))
+      return e
+    end,
 
-  elseif ast.func.value == 'number?' then
-    return types.AstAtom:new{ value = misty.bool2hash(type(misty.evaluate(ast.args[1])) == 'number') }
+    ['add1'] = function() return misty.evaluate(ast.args[1]) + 1 end,
 
-  elseif ast.func.value == 'atom?' then
-    local e = misty.evaluate(ast.args[1])
-    return types.AstAtom:new{ value = misty.bool2hash((type(e) == 'number') or (e.__type == 'AstAtom')) }
+    ['sub1'] = function() return misty.evaluate(ast.args[1]) - 1 end,
 
-  elseif ast.func.value == 'zero?' then
-    return types.AstAtom:new{ value = misty.bool2hash(misty.evaluate(ast.args[1]) == 0) }
+    ['number?'] = function()
+      return types.AstAtom:new{ value = misty.bool2hash(type(misty.evaluate(ast.args[1])) == 'number') }
+    end,
 
-  elseif ast.func.value == 'quote' then
-    return ast.args[1]
+    ['atom?'] = function()
+      local e = misty.evaluate(ast.args[1])
+      return types.AstAtom:new{ value = misty.bool2hash((type(e) == 'number') or (e.__type == 'AstAtom')) }
+    end,
 
-  else
-    assert(false, 'unknown primitive function: ' .. tostring(ast.func.value))
+    ['zero?'] = function()
+      return types.AstAtom:new{ value = misty.bool2hash(misty.evaluate(ast.args[1]) == 0) }
+    end,
 
-  end
+    ['quote'] = function()
+      return ast.args[1]
+    end,
+
+  }
+
+  return lookup[ast.func.value]()
 end
 
 function misty.apply_cond(ast)
@@ -72,6 +73,7 @@ function misty.apply_cond(ast)
 end
 
 function misty.evaluate(ast)
+
   if type(ast) == 'number' then
     return ast
 
