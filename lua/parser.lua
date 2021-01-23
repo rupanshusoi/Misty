@@ -32,7 +32,7 @@ function parser.find_closep(tokens, openp)
   return idx
 end
 
-function parser.expand_quote(tokens)
+function parser.expand_quotes(tokens)
   -- Expand 'l --> (quote l)
   local i = 1
   while i < #tokens do
@@ -126,7 +126,10 @@ function parser.main(list)
     elseif (list.value == '#f') then
       return list
 
-    else assert(false) end
+    else
+      return types.AstIdentifier:new{ name = list.value }
+
+    end
 
   end
 
@@ -147,9 +150,9 @@ function parser.main(list)
   assert(false)
 end
 
-function parser.parse(tokens)
+function parser.parse(S)
   -- Assume outermost level is a list
-  return parser.main(parser.parse_list(parser.expand_quote(tokens)))
+  return parser.main(parser.parse_list(parser.expand_quotes(parser.tokenize(S))))
 end
 
 return parser

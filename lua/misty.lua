@@ -3,58 +3,95 @@ local parser = require('parser')
 
 local misty = {}
 
+-- From lua-users.org/wiki/CopyTable
+function misty.deepcopy(orig, copies)
+  copies = copies or {}
+  local orig_type = type(orig)
+  local copy
+
+  if orig_type == 'table' then
+    if copies[orig] then
+      copy = copies[orig]
+
+    else
+      copy = {}
+      copies[orig] = copy
+      for orig_key, orig_value in next, orig, nil do
+        copy[misty.deepcopy(orig_key, copies)] = misty.deepcopy(orig_value, copies)
+      end
+      setmetatable(copy, misty.deepcopy(getmetatable(orig), copies))
+
+    end
+  else -- number, string, boolean, etc
+    copy = orig
+
+  end
+
+  return copy
+end
+
 function misty.bool2hash(bool)
   if bool then return '#t' else return '#f' end
 end
 
-function misty.apply_primitive(ast)
+function misty.apply_primitive(ast, env)
   if ast.func.value == '+' then
-    return misty.evaluate(ast.args[1]) + misty.evaluate(ast.args[2])
+    return misty.evaluate(ast.args[1], env) + misty.evaluate(ast.args[2], env)
 
   elseif ast.func.value == '-' then
-    return misty.evaluate(ast.args[1]) - misty.evaluate(ast.args[2])
+    return misty.evaluate(ast.args[1], env) - misty.evaluate(ast.args[2], env)
 
   elseif ast.func.value == '*' then
-    return misty.evaluate(ast.args[1]) * misty.evaluate(ast.args[2])
+    return misty.evaluate(ast.args[1], env) * misty.evaluate(ast.args[2], env)
 
   elseif ast.func.value == '//' then
-    return misty.evaluate(ast.args[1]) // misty.evaluate(ast.args[2])
+    return misty.evaluate(ast.args[1], env) // misty.evaluate(ast.args[2], env)
 
   elseif ast.func.value == 'car' then
-    return misty.evaluate(ast.args[1]).values[1]
+    return misty.evaluate(ast.args[1], env).values[1]
 
   elseif ast.func.value == 'cdr' then
-    local e = misty.evaluate(ast.args[1])
+    local e = misty.evaluate(ast.args[1], env)
     table.remove(e.values, 1)
     return e
 
   elseif ast.func.value == 'cons' then
-    local e = misty.evaluate(ast.args[2]) 
+    local e = misty.evaluate(ast.args[2], env) 
+    local copy = misty.deepcopy(e)
+
     assert(type(e) == 'table' and e.__type == 'AstList', 'second arg to cons must be AstList')
-    table.insert(e.values, 1, misty.evaluate(ast.args[1]))
-    return e
+
+    -- I'm not sure what's going on here. We need to put extra parens here to fix Lua's
+    -- weird behaviour incase evaluate(...) does not return anything, but as far as I
+    -- understand, evaluate(...) always returns something.
+    table.insert(copy.values, 1, (misty.evaluate(ast.args[1], env)))
+
+    return copy
 
   elseif ast.func.value == 'add1' then
-    return misty.evaluate(ast.args[1]) + 1
+    return misty.evaluate(ast.args[1], env) + 1
 
   elseif ast.func.value == 'sub1' then
-    return misty.evaluate(ast.args[1]) - 1
+    return misty.evaluate(ast.args[1], env) - 1
 
   elseif ast.func.value == 'number?' then
-    return types.AstAtom:new{ value = misty.bool2hash(type(misty.evaluate(ast.args[1])) == 'number') }
+    return types.AstAtom:new{ value = misty.bool2hash(type(misty.evaluate(ast.args[1], env)) == 'number') }
 
   elseif ast.func.value == 'atom?' then
-    local e = misty.evaluate(ast.args[1])
+    local e = misty.evaluate(ast.args[1], env)
     return types.AstAtom:new{ value = misty.bool2hash((type(e) == 'number') or (e.__type == 'AstAtom')) }
 
   elseif ast.func.value == 'zero?' then
-    return types.AstAtom:new{ value = misty.bool2hash(misty.evaluate(ast.args[1]) == 0) }
+    return types.AstAtom:new{ value = misty.bool2hash(misty.evaluate(ast.args[1], env) == 0) }
 
   elseif ast.func.value == 'quote' then
     return ast.args[1]
 
   elseif ast.func.value == 'print' then
-    misty.my_printn(misty.evaluate(ast.args[1]))
+    misty.my_printn(misty.evaluate(ast.args[1], env))
+
+  elseif ast.func.value == 'define' then
+    env[ast.args[1].name] = misty.evaluate(ast.args[2], env)
 
   else
     assert(false, 'unknown primitive function: ' .. tostring(ast.func.value))
@@ -64,22 +101,22 @@ end
 
 function misty.apply_cond(ast)
   for line = 1, #ast.cond_lines do
-    local cond = misty.evaluate(ast.cond_lines[line].cond)
+    local cond = misty.evaluate(ast.cond_lines[line].cond, env)
 
     if cond == '#t' or cond.value == '#t' then
-      return misty.evaluate(ast.cond_lines[line].stat)
+      return misty.evaluate(ast.cond_lines[line].stat, env)
     end
 
   end
   assert(false, 'no true cond-line in cond expression')
 end
 
-function misty.evaluate(ast)
+function misty.evaluate(ast, env)
   if type(ast) == 'number' then
     return ast
 
   elseif ast.__type == 'AstPrimitive' then
-    return misty.apply_primitive(ast)
+    return misty.apply_primitive(ast, env)
 
   elseif ast.__type == 'AstList' then
     return ast
@@ -88,7 +125,11 @@ function misty.evaluate(ast)
     return ast.value
 
   elseif ast.__type == 'AstCond' then
-    return misty.apply_cond(ast)
+    return misty.apply_cond(ast, env)
+
+  elseif ast.__type == 'AstIdentifier' then
+    -- Todo: Add local environments
+    return assert(env[ast.name], 'identifier not found')
 
   else
     assert(false)
@@ -96,8 +137,8 @@ function misty.evaluate(ast)
   end
 end
 
-function misty.interpret(S)
-  return misty.evaluate(parser.parse(parser.tokenize(S)))
+function misty.interpret(S, env)
+  return misty.evaluate(parser.parse(S), env)
 end
 
 function misty.my_print(ast)
