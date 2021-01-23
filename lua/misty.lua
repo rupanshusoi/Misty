@@ -53,6 +53,9 @@ function misty.apply_primitive(ast)
   elseif ast.func.value == 'quote' then
     return ast.args[1]
 
+  elseif ast.func.value == 'print' then
+    return misty.my_printn(misty.evaluate(ast.args[1]))
+
   else
     assert(false, 'unknown primitive function: ' .. tostring(ast.func.value))
 
