@@ -54,7 +54,7 @@ function misty.apply_primitive(ast)
     return ast.args[1]
 
   elseif ast.func.value == 'print' then
-    return misty.my_printn(misty.evaluate(ast.args[1]))
+    misty.my_printn(misty.evaluate(ast.args[1]))
 
   else
     assert(false, 'unknown primitive function: ' .. tostring(ast.func.value))
@@ -101,7 +101,10 @@ function misty.interpret(S)
 end
 
 function misty.my_print(ast)
-  if type(ast) == 'number' then
+  if not ast then
+    io.write('#<unspecified>')
+
+  elseif type(ast) == 'number' then
     io.write(tostring(ast) .. ' ')
 
   elseif ast.__type == 'AstList' then
