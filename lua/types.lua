@@ -1,10 +1,12 @@
 local types = {}
 
-types.AstPrimitive = { __type = 'AstPrimitive' }
-types.AstList      = { __type = 'AstList'      }
-types.AstAtom      = { __type = 'AstAtom'      }
-types.AstCond      = { __type = 'AstCond'      }
-types.AstCondLine  = { __type = 'AstCondLine'  }
+types.AstPrimitive    = { __type = 'AstPrimitive'    }
+types.AstList         = { __type = 'AstList'         }
+types.AstAtom         = { __type = 'AstAtom'         }
+types.AstCond         = { __type = 'AstCond'         }
+types.AstCondLine     = { __type = 'AstCondLine'     }
+types.AstIdentifier   = { __type = 'AstIdentifier'   }
+types.AstLambda       = { __type = 'AstLambda'       }
 
 function types.AstPrimitive:new(o)
   o = o or { args = {} }
@@ -36,6 +38,20 @@ end
 
 function types.AstCondLine:new(o)
   o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  return o
+end
+
+function types.AstIdentifier:new(o)
+  o = o or { }
+  setmetatable(o, self)
+  self.__index = self
+  return o
+end
+
+function types.AstLambda:new(o)
+  o = o or { formals = {} }
   setmetatable(o, self)
   self.__index = self
   return o

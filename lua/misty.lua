@@ -8,11 +8,9 @@ function misty.deepcopy(orig, copies)
   copies = copies or {}
   local orig_type = type(orig)
   local copy
-
   if orig_type == 'table' then
     if copies[orig] then
       copy = copies[orig]
-
     else
       copy = {}
       copies[orig] = copy
@@ -20,13 +18,10 @@ function misty.deepcopy(orig, copies)
         copy[misty.deepcopy(orig_key, copies)] = misty.deepcopy(orig_value, copies)
       end
       setmetatable(copy, misty.deepcopy(getmetatable(orig), copies))
-
     end
   else -- number, string, boolean, etc
     copy = orig
-
   end
-
   return copy
 end
 
@@ -94,12 +89,32 @@ function misty.apply_primitive(ast, env)
     env[ast.args[1].name] = misty.evaluate(ast.args[2], env)
 
   else
-    assert(false, 'unknown primitive function: ' .. tostring(ast.func.value))
+    --assert(false, 'unknown primitive function: ' .. tostring(ast.func.value))
+    local func
+    if ast.func.__type == 'AstAtom' then
+      -- Retrieve the lambda associated with this identifier
+      func = misty.lookup_id(ast.func.value, env)
+    else
+      func = ast.func
+    end
+
+    return misty.apply_non_primitive(func, ast.args, env)
 
   end
 end
 
-function misty.apply_cond(ast)
+function misty.apply_non_primitive(func, args, env)
+  local child = {}
+  child.parent = env
+
+  for i = 1, #func.formals.values do
+    child[func.formals.values[i].value] = misty.evaluate(args[i])
+  end
+
+  return misty.evaluate(func.body, child)
+end
+
+function misty.apply_cond(ast, env)
   for line = 1, #ast.cond_lines do
     local cond = misty.evaluate(ast.cond_lines[line].cond, env)
 
@@ -109,6 +124,18 @@ function misty.apply_cond(ast)
 
   end
   assert(false, 'no true cond-line in cond expression')
+end
+
+function misty.lookup_id(name, env)
+  assert(env, 'environment can not be nil')
+  print('looking for ' .. name)
+  if env[name] then
+    return env[name]
+  elseif env.parent then
+    return misty.lookup_id(name, env.parent)
+  else
+    assert(false, 'identifier lookup failed')
+  end
 end
 
 function misty.evaluate(ast, env)
@@ -129,7 +156,11 @@ function misty.evaluate(ast, env)
 
   elseif ast.__type == 'AstIdentifier' then
     -- Todo: Add local environments
-    return assert(env[ast.name], 'identifier not found')
+    return misty.lookup_id(ast.name, env)
+
+  elseif ast.__type == 'AstLambda' then
+    -- This should only be called from a (define id (lambda ...))
+    return ast
 
   else
     assert(false)
@@ -159,7 +190,7 @@ function misty.my_print(ast)
     io.write(ast.value .. ' ')
 
   else
-    assert(false)
+    assert(false, ast.__type)
 
   end
 end

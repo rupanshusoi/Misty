@@ -86,9 +86,9 @@ function parser.parse_list(tokens)
 end
 
 function parser.parse_cond_line(list)
-  local ast = types.AstCondLine:new()
-
   assert(#list.values == 2, 'ill-formed cond-line')
+
+  local ast = types.AstCondLine:new()
   ast.cond = parser.main(list.values[1])
   ast.stat = parser.main(list.values[2])
 
@@ -114,6 +114,42 @@ function parser.parse_primitive(list)
   end
 
   return ast
+end
+
+function parser.parse_lambda(list)
+  assert(#list.values == 3, 'ill-formed lambda expression')
+
+  local ast = types.AstLambda:new()
+  ast.formals = list.values[2]
+  ast.body = parser.main(list.values[3])
+
+  return ast
+end
+
+function parser.parse_application(list)
+  -- There are 3 cases here:
+  -- 1. (primitive args)
+  -- 2. (non-primitive args)
+  -- 3. ((lambda ...) args)
+  -- Let us parse cases 1 & 2 the same way,
+  -- and then, during evaluation, we try will try to evaluate every
+  -- application as a primitive first, and if that fails only then 
+  -- we try to evaluate as a non-primitive. This will also save us from
+  -- having to create a list of supported primitives to check against
+  -- here, which I really don't want to do.
+
+  if list.values[1].__type == 'AstList' then
+    local ast = types.AstPrimitive:new()
+    ast.func = parser.parse_lambda(list.values[1])
+
+    for i = 2, #list.values do
+      table.insert(ast.args, parser.main(list.values[i]))
+    end
+
+    return ast
+  else
+    return parser.parse_primitive(list)
+  end
 end
 
 function parser.main(list)
@@ -143,8 +179,11 @@ function parser.main(list)
   elseif list.values[1].value == 'cond' then
     return parser.parse_cond(list)
 
+  elseif list.values[1].value == 'lambda' then
+    return parser.parse_lambda(list)
+
   else
-    return parser.parse_primitive(list)
+    return parser.parse_application(list)
 
   end
   assert(false)
