@@ -43,7 +43,14 @@ function misty.apply_primitive(ast, env)
     return misty.evaluate(ast.args[1], env) // misty.evaluate(ast.args[2], env)
 
   elseif ast.func.value == 'car' then
-    return misty.evaluate(ast.args[1], env).values[1]
+    -- Hacky: We need to use tonumber(...) here because numbers inside a quote
+    -- get parsed as AstAtoms, which are not numbers for Lua
+    local e = misty.evaluate(ast.args[1], env).values[1]
+    if tonumber(e.value) then
+      return tonumber(e.value)
+    else
+      return e
+    end
 
   elseif ast.func.value == 'cdr' then
     local copy = misty.deepcopy(misty.evaluate(ast.args[1], env))
