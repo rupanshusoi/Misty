@@ -180,6 +180,7 @@ function parser.main(list)
     return parser.parse_cond(list)
 
   elseif list.values[1].value == 'lambda' then
+    -- We should only reach here when parsing (define id (lambda ...))
     return parser.parse_lambda(list)
 
   else

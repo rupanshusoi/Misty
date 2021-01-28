@@ -89,10 +89,8 @@ function misty.apply_primitive(ast, env)
     env[ast.args[1].name] = misty.evaluate(ast.args[2], env)
 
   else
-    --assert(false, 'unknown primitive function: ' .. tostring(ast.func.value))
     local func
     if ast.func.__type == 'AstAtom' then
-      -- Retrieve the lambda associated with this identifier
       func = misty.lookup_id(ast.func.value, env)
     else
       func = ast.func
@@ -108,7 +106,7 @@ function misty.apply_non_primitive(func, args, env)
   child.parent = env
 
   for i = 1, #func.formals.values do
-    child[func.formals.values[i].value] = misty.evaluate(args[i])
+    child[func.formals.values[i].value] = misty.evaluate(args[i], env)
   end
 
   return misty.evaluate(func.body, child)
@@ -128,7 +126,6 @@ end
 
 function misty.lookup_id(name, env)
   assert(env, 'environment can not be nil')
-  print('looking for ' .. name)
   if env[name] then
     return env[name]
   elseif env.parent then

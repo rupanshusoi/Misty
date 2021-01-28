@@ -16,10 +16,7 @@ if arg[1] then
     local closep = parser.find_closep(tokens, i)
   
     local parse_tree = parser.main(parser.parse_list{ table.unpack(tokens, i, closep) })
-    local value = misty.evaluate(parse_tree, global_env)
-    if value then
-      misty.my_printn(value)
-    end
+    misty.evaluate(parse_tree, global_env)
   
     i = closep + 1
   end
@@ -29,6 +26,7 @@ if arg[1] then
 else
   print('\nMISTY: A Scheme interpreter in Lua')
   print('By Rupanshu Soi\n')
+
   while true do
     io.write('Misty$ ')
     local line = io.read()
