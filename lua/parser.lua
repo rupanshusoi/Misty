@@ -68,6 +68,10 @@ function parser.parse_list(tokens)
   -- Remove outermost parens
   local tokens_trimmed = { table.unpack(tokens, 2, #tokens - 1) }
 
+  if #tokens_trimmed == 0 then
+    return ast
+  end
+
   i = 1
   while i <= #tokens_trimmed do
 

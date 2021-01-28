@@ -46,9 +46,9 @@ function misty.apply_primitive(ast, env)
     return misty.evaluate(ast.args[1], env).values[1]
 
   elseif ast.func.value == 'cdr' then
-    local e = misty.evaluate(ast.args[1], env)
-    table.remove(e.values, 1)
-    return e
+    local copy = misty.deepcopy(misty.evaluate(ast.args[1], env))
+    table.remove(copy.values, 1)
+    return copy
 
   elseif ast.func.value == 'cons' then
     local e = misty.evaluate(ast.args[2], env) 
@@ -78,6 +78,14 @@ function misty.apply_primitive(ast, env)
 
   elseif ast.func.value == 'zero?' then
     return types.AstAtom:new{ value = misty.bool2hash(misty.evaluate(ast.args[1], env) == 0) }
+
+  elseif ast.func.value == 'null?' then
+    local e = misty.evaluate(ast.args[1], env)
+    if type(e) == 'number' or e.__type ~= 'AstList' then
+      return types.AstAtom:new{ value = misty.bool2hash(false) }
+    else
+      return types.AstAtom:new{ value = misty.bool2hash(#e.values == 0) }
+    end
 
   elseif ast.func.value == 'quote' then
     return ast.args[1]
@@ -128,10 +136,13 @@ function misty.lookup_id(name, env)
   assert(env, 'environment can not be nil')
   if env[name] then
     return env[name]
+
   elseif env.parent then
     return misty.lookup_id(name, env.parent)
+
   else
     assert(false, 'identifier lookup failed')
+
   end
 end
 
@@ -152,7 +163,6 @@ function misty.evaluate(ast, env)
     return misty.apply_cond(ast, env)
 
   elseif ast.__type == 'AstIdentifier' then
-    -- Todo: Add local environments
     return misty.lookup_id(ast.name, env)
 
   elseif ast.__type == 'AstLambda' then
