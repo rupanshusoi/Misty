@@ -27,6 +27,8 @@ if arg[1] then
   file:close()
 
 else
+  print('\nMISTY: A Scheme interpreter in Lua')
+  print('By Rupanshu Soi\n')
   while true do
     io.write('Misty$ ')
     local line = io.read()
