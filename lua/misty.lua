@@ -148,7 +148,7 @@ function misty.lookup_id(name, env)
     return misty.lookup_id(name, env.parent)
 
   else
-    assert(false, 'identifier lookup failed')
+    assert(false, 'identifier lookup failed for: ' .. name)
 
   end
 end
@@ -173,7 +173,7 @@ function misty.evaluate(ast, env)
     return misty.lookup_id(ast.name, env)
 
   elseif ast.__type == 'AstLambda' then
-    -- This should only be called from a (define id (lambda ...))
+    -- This should only get called from a (define id (lambda ...))
     return ast
 
   else
@@ -194,11 +194,11 @@ function misty.my_print(ast)
     io.write(tostring(ast) .. ' ')
 
   elseif ast.__type == 'AstList' then
-    io.write('( ')
+    io.write('(')
     for _, value in pairs(ast.values) do
       misty.my_print(value)
     end
-    io.write(') ')
+    io.write('\x08) ')
 
   elseif ast.__type == 'AstAtom' then
     io.write(ast.value .. ' ')
