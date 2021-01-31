@@ -39,8 +39,8 @@ function misty.apply_primitive(ast, env)
   elseif ast.func.value == '*' then
     return misty.evaluate(ast.args[1], env) * misty.evaluate(ast.args[2], env)
 
-  elseif ast.func.value == '//' then
-    return misty.evaluate(ast.args[1], env) // misty.evaluate(ast.args[2], env)
+  elseif ast.func.value == '/' then
+    return misty.evaluate(ast.args[1], env) / misty.evaluate(ast.args[2], env)
 
   elseif ast.func.value == 'car' then
     -- Hacky: We need to use tonumber(...) here because numbers inside a quote
