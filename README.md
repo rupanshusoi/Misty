@@ -27,7 +27,7 @@ The following primitives are supported:
 | 1     | car               | `(car '(a b)) --> a`                      |
 | 2     | cdr               | `(cdr '(a b)) --> (b)`                    |
 | 3     | cons              | `(cons a '(b)) --> (a b)`                 |
-| 4     | cond              | `(cons ((zero? 1) 1) (else 2)) --> 2`     |
+| 4     | cond              | `(cond ((zero? 1) 1) (else 2)) --> 2`     |
 | 5     | add1              | `(add1 1) --> 2`                          |
 | 6     | sub1              | `(sub1 1) --> 0`                          |
 | 7     | +                 | `(+ 1 2) --> 3`                           |
