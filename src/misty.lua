@@ -45,64 +45,72 @@ local function parse(tokens)
 end
 
 local function eval(list, env)
-  if tonumber(list) then
-    return tonumber(list)
-  end
-  if type(list) == 'string' then
-    return env[list]
-  end
-
-  local op = list[1]
-  if op == '+' then
-    return eval(list[2], env) + eval(list[3], env)
-  elseif op == '*' then
-    return eval(list[2], env) * eval(list[3], env)
-  elseif op == 'zero?' then
-    return eval(list[2], env) == 0
-  elseif op == '<' then
-    return eval(list[2], env) < eval(list[3], env)
-  elseif op == 'number?' then
-    return type(eval(list[2], env)) == 'number'
-  elseif op == 'car' then
-    return eval(list[2], env)[1]
-  elseif op == 'cdr' then
-    return { table.unpack(eval(list[2], env), 2) }
-  elseif op == 'cons' then
-    return { eval(list[2], env), table.unpack(eval(list[3], env)) }
-  elseif op == 'if' then
-    if eval(list[2], env) then
-      return eval(list[3], env)
-    else
-      return eval(list[4], env)
+  while true do
+    if tonumber(list) then
+      return tonumber(list)
     end
-  elseif op == 'cond' then
-    local arg = 2
-    while true do
-      if eval(list[arg][1]) then
-        return eval(list[arg][2])
+    if type(list) == 'string' then
+      return env[list]
+    end
+
+    local op = list[1]
+    if op == '+' then
+      return eval(list[2], env) + eval(list[3], env)
+    elseif op == '-' then
+      return eval(list[2], env) - eval(list[3], env)
+    elseif op == '*' then
+      return eval(list[2], env) * eval(list[3], env)
+    elseif op == 'zero?' then
+      return eval(list[2], env) == 0
+    elseif op == '<' then
+      return eval(list[2], env) < eval(list[3], env)
+    elseif op == 'number?' then
+      return type(eval(list[2], env)) == 'number'
+    elseif op == 'null?' then
+      return next(eval(list[2], env)) == nil
+    elseif op == 'car' then
+      return eval(list[2], env)[1]
+    elseif op == 'cdr' then
+      return { table.unpack(eval(list[2], env), 2) }
+    elseif op == 'cons' then
+      return { eval(list[2], env), table.unpack(eval(list[3], env)) }
+    elseif op == 'if' then
+      if eval(list[2], env) then
+        list = list[3]
+      else
+        list = list[4]
       end
-      arg = arg + 1
-    end
-  elseif op == 'quote' then
-    return list[2]
-  elseif op == 'define' then
-    env[list[2]] = eval(list[3], env)
-    return nil
-  elseif op == 'lambda' then
-    return { list, env }
-  else
-    local op, closure = table.unpack(eval(op, env))
+    elseif op == 'cond' then
+      local arg = 2
+      while true do
+        if eval(list[arg][1], env) then
+          list = list[arg][2]
+          break
+        end
+        arg = arg + 1
+      end
+    elseif op == 'quote' then
+      return list[2]
+    elseif op == 'define' then
+      env[list[2]] = eval(list[3], env)
+      return nil
+    elseif op == 'lambda' then
+      return { list, env }
+    else
+      local op, closure = table.unpack(eval(op, env))
 
-    local new_env = {}
-    setmetatable(new_env, closure)
-    closure.__index = closure
+      local new_env = {}
+      setmetatable(new_env, closure)
+      closure.__index = closure
 
-    local arg = 2
-    while arg <= #list do
-      new_env[op[2][arg - 1]] = eval(list[arg], env)
-      arg = arg + 1
+      local arg = 2
+      while arg <= #list do
+        new_env[op[2][arg - 1]] = eval(list[arg], env)
+        arg = arg + 1
+      end
+      list = op[3]
+      env = new_env
     end
-    return eval(op[3], new_env)
   end
 
 end
