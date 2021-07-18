@@ -49,7 +49,6 @@ local function eval(list, env)
     return tonumber(list)
   end
   if type(list) == 'string' then
-    -- print('looking up ', list, ' found value ', env[list])
     return env[list]
   end
 
@@ -58,12 +57,32 @@ local function eval(list, env)
     return eval(list[2], env) + eval(list[3], env)
   elseif op == '*' then
     return eval(list[2], env) * eval(list[3], env)
+  elseif op == 'zero?' then
+    return eval(list[2], env) == 0
+  elseif op == '<' then
+    return eval(list[2], env) < eval(list[3], env)
+  elseif op == 'number?' then
+    return type(eval(list[2], env)) == 'number'
   elseif op == 'car' then
     return eval(list[2], env)[1]
   elseif op == 'cdr' then
     return { table.unpack(eval(list[2], env), 2) }
   elseif op == 'cons' then
     return { eval(list[2], env), table.unpack(eval(list[3], env)) }
+  elseif op == 'if' then
+    if eval(list[2], env) then
+      return eval(list[3], env)
+    else
+      return eval(list[4], env)
+    end
+  elseif op == 'cond' then
+    local arg = 2
+    while true do
+      if eval(list[arg][1]) then
+        return eval(list[arg][2])
+      end
+      arg = arg + 1
+    end
   elseif op == 'quote' then
     return list[2]
   elseif op == 'define' then
