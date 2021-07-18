@@ -44,30 +44,74 @@ local function parse(tokens)
   return program
 end
 
-local function eval(list)
+local function eval(list, env)
   if tonumber(list) then
     return tonumber(list)
   end
+  if type(list) == 'string' then
+    -- print('looking up ', list, ' found value ', env[list])
+    return env[list]
+  end
 
-  local func = list[1]
-  if func == '+' then
-    return eval(list[2]) + eval(list[3])
-  elseif func == '*' then
-    return eval(list[2]) * eval(list[3])
-  elseif func == 'car' then
-    return eval(list[2])[1]
-  elseif func == 'cdr' then
-    return { table.unpack(eval(list[2]), 2) }
-  elseif func == 'cons' then
-    return { eval(list[2]), table.unpack(eval(list[3])) }
-  elseif func == 'quote' then
+  local op = list[1]
+  if op == '+' then
+    return eval(list[2], env) + eval(list[3], env)
+  elseif op == '*' then
+    return eval(list[2], env) * eval(list[3], env)
+  elseif op == 'car' then
+    return eval(list[2], env)[1]
+  elseif op == 'cdr' then
+    return { table.unpack(eval(list[2], env), 2) }
+  elseif op == 'cons' then
+    return { eval(list[2], env), table.unpack(eval(list[3], env)) }
+  elseif op == 'quote' then
     return list[2]
+  elseif op == 'define' then
+    env[list[2]] = eval(list[3], env)
+    return nil
+  elseif op == 'lambda' then
+    return { list, env }
+  else
+    local op, closure = table.unpack(eval(op, env))
+
+    local new_env = {}
+    setmetatable(new_env, closure)
+    closure.__index = closure
+
+    local arg = 2
+    while arg <= #list do
+      new_env[op[2][arg - 1]] = eval(list[arg], env)
+      arg = arg + 1
+    end
+    return eval(op[3], new_env)
   end
 
 end
 
+local function eval_file(file)
+  local global_env = {}
+  local return_value
+
+  local file = io.open(file)
+  local tokens = tokenize(file:read('*all'))
+  
+  local i = 1
+  while i <= #tokens do
+    local closing_paren = find_closing_paren(tokens, i)
+    return_value = eval(parse{ table.unpack(tokens, i, closing_paren) }, global_env)
+    i = closing_paren + 1
+  end
+
+  file:close()
+  return return_value
+end
+
 function Misty.run(source)
-  return eval(parse(tokenize(source)))
+  return eval(parse(tokenize(source)), {})
+end
+
+function Misty.run_file(file)
+  return eval_file(file)
 end
 
 return Misty
