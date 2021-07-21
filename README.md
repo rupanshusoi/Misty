@@ -1,65 +1,39 @@
 # Misty
 
-A Scheme interpreter in Lua.
+A Scheme Interpreter in Lua.
 
 ## Dependencies
-Misty has been tested with Lua 5.4.2 and Chicken Scheme 4.12.0.
+Misty has been developed with Lua 5.4.2.
 
 ## Motivation
-This project is a personal exercise in understanding programming language implementation. I have tried my best to match the semantics of Chicken Scheme, but I realistically can not make any guarantees of correctness or completeness.
+This project is a personal exercise in understanding programming language implementation. The goal was to implement a few major features, therefore, I have not made an attempt to match the semantics of Scheme in detail. As such, Misty can be considered a separate language that derives from Scheme.
 
-## Lua Implementation
+## Usage
+`lua src/test.lua` will evaluate each expression in a file (set to `test.scm` by default) and return the evaluation of the last one. Note that Misty currently has no `display` method.
 
-### Setup
-No explicit setup is required, except installation of the dependencies.
+Misty exposes two public methods: `Misty.run` which will evaluate a single expression given as a string, and `Misty.run_file` which is used in `test.lua`.
 
-### Usage
-`lua repl.lua` will start Misty in interactive mode, similar to Chicken Scheme's `csi` command.
+## Features
+On a high-level, Misty supports lexical scoping, higher-order functions, and has tail-call optimization. A full list of primitives can easily be found in `misty.lua`; it is easy to add new primitives there.
 
-`lua repl.lua foo.scm` will evaluate every expression in `foo.scm`, similar to doing `csc foo.scm ; ./foo`. Note that unlike `csc`, Misty will still interpret the file, not compile it.
+## Potential Improvements
+One of the main disadvantages of implementing a language using the control-flow of another high-level language is the difficulty in reconciling subtle semantic differences. For instance, which values are _falsy_ for the two languages might be different. A better implementation would be to implement a virtual machine for Scheme.
 
-### Primitives
+Moreover, it would be nice to have support for floats, strings, macros, and `call/cc`.
 
-The following primitives are supported:
-
-| S No. | Primitive         | Example |
-|-------|-------------------|---------|
-| 1     | car               | `(car '(a b)) --> a`                      |
-| 2     | cdr               | `(cdr '(a b)) --> (b)`                    |
-| 3     | cons              | `(cons a '(b)) --> (a b)`                 |
-| 4     | cond              | `(cond ((zero? 1) 1) (else 2)) --> 2`     |
-| 5     | add1              | `(add1 1) --> 2`                          |
-| 6     | sub1              | `(sub1 1) --> 0`                          |
-| 7     | +                 | `(+ 1 2) --> 3`                           |
-| 8     | -                 | `(- 2 1) --> 1`                           |
-| 9     | *                 | `(* 2 3) --> 6`                           |
-| 10    | /                 | `(/ 4 2) --> 2`                           |
-| 11    | zero?             | `(zero? 1) --> #f`                        |
-| 12    | null?             | `(null? '()) --> #t`                      |
-| 13    | number?           | `(number? '()) --> #f`                    |
-| 14    | atom?             | `(atom? 2) --> #t`                        |
-| 15    | quote             | `(quote a) --> a`                         |
-| 16    | define            | `(define x 2)`                            |
-| 17    | print             | `(print 'a)`                              |
-| 18    | lambda            | `((lambda (lat) (car lat)) '(a b)) --> a` |
-| 19    | ' (quasiquote)    | `'a --> (quote a)`                        |
-
-### Known Issues / Future Improvements
-* Higher order functions do not work.
-* Comments are not supported.
-* Multi-line input in interactive mode is not supported.
-* Types are probably unnecessary for this implementation. I have plans to rewrite a large part of Misty without introducing types inside the implementation.
-* Strings are not supported.
+## Old Misty
+`old-src` contains the original implementation of Misty. I wrote it in Jan 2021 but consider it to be very bloated. For e.g., it has a basic notion of types that it doesn't really need. The latest version is rewritten (almost) from scratch.
 
 ## Scheme Implementation
 This project includes a Scheme interpreter for Scheme as well. The code is lifted almost entirely from Chapter 10 of The Little Schemer (see below). I wrote it when I was reading the book, and decided to include it for completeness. Perhaps it will be useful to others as the book never presents the entire implementation together in a single place.
 
-## Why "Misty"?
+## Why Misty?
 The name should be reminiscent of M-expressions, an early syntax for Lisp (of which Scheme is a dialect).
 
 ## Author
-Rupanshu Soi, Department of Computer Science, BITS Pilani at Hyderabad, India.
+Rupanshu Soi, Department of Computer Science, BITS Pilani - Hyderabad Campus, India.
 
 ## References
 - [(How to Write a (Lisp) Interpreter (in Python)) by Peter Norvig](https://norvig.com/lispy.html)
 - [The Little Schemer by Friedman and Felleisen](https://mitpress.mit.edu/books/little-schemer-fourth-edition)
+- [(An ((Even Better) Lisp) Interpreter (in Python))](http://norvig.com/lispy2.html)
