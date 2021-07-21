@@ -64,6 +64,8 @@ local function eval(list, env)
       return eval(list[2], env) == 0
     elseif op == '<' then
       return eval(list[2], env) < eval(list[3], env)
+    elseif op == '=' then
+      return eval(list[2], env) == eval(list[3], env)
     elseif op == 'number?' then
       return type(eval(list[2], env)) == 'number'
     elseif op == 'null?' then
@@ -99,24 +101,26 @@ local function eval(list, env)
     else
       local op, closure = table.unpack(eval(op, env))
 
+      setmetatable(closure, env)
+      env.__index = env
+
       local new_env = {}
       setmetatable(new_env, closure)
       closure.__index = closure
 
       local arg = 2
       while arg <= #list do
-        new_env[op[2][arg - 1]] = eval(list[arg], env)
+        new_env[op[2][arg - 1]] = eval(list[arg], closure)
         arg = arg + 1
       end
       list = op[3]
       env = new_env
     end
   end
-
 end
 
 local function eval_file(file)
-  local global_env = {}
+  local global_env = { ['else'] = true }
   local return_value
 
   local file = io.open(file)
@@ -134,7 +138,7 @@ local function eval_file(file)
 end
 
 function Misty.run(source)
-  return eval(parse(tokenize(source)), {})
+  return eval(parse(tokenize(source)), { ['else'] = true })
 end
 
 function Misty.run_file(file)
@@ -142,3 +146,4 @@ function Misty.run_file(file)
 end
 
 return Misty
+
