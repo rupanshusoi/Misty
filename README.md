@@ -9,12 +9,12 @@ Misty has been developed with Lua 5.4.2.
 This project is a personal exercise in understanding programming language implementation. The goal was to implement a few major features, therefore, I have not made an attempt to match the semantics of Scheme in detail. As such, Misty can be considered a separate language that derives from Scheme.
 
 ## Usage
-`lua src/test.lua` will evaluate each expression in a file (set to `test.scm` by default) and return the evaluation of the last one. Note that Misty currently has no `display` method.
+`lua src/test.lua` will evaluate each expression in a file (set to `src/test.scm` by default) and return the evaluation of the last one. Note that Misty currently has no `display` method.
 
-Misty exposes two public methods: `Misty.run` which will evaluate a single expression given as a string, and `Misty.run_file` which is used in `test.lua`.
+Misty exposes two public methods: `Misty.run` which will evaluate a single expression given as a string, and `Misty.run_file` which is used in `src/test.lua`.
 
 ## Features
-On a high-level, Misty supports lexical scoping, higher-order functions, and has tail-call optimization. A full list of primitives can easily be found in `misty.lua`; it is easy to add new primitives there.
+On a high-level, Misty supports lexical scoping, higher-order functions, and has tail-call optimization. A full list of primitives can easily be found in `src/misty.lua`; it is easy to add new primitives there.
 
 ## Potential Improvements
 One of the main disadvantages of implementing a language using the control-flow of another high-level language is the difficulty in reconciling subtle semantic differences. For instance, which values are _falsy_ for the two languages might be different. A better implementation would be to implement a virtual machine for Scheme.

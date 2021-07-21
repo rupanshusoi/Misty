@@ -1,7 +1,7 @@
 Misty = require('misty')
 
 local function pretty_print(t)
-  if type(t) == 'number' or type(t) == 'string' or type(t) == 'boolean' then
+  if type(t) ~= 'table' then
     print(t)
     return
   end
